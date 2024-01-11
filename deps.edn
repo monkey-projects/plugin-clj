@@ -4,15 +4,18 @@
  
  :aliases
  {:test
-  {:extra-deps {com.monkeyprojects/build {:mvn/version "0.1.1"}}
+  {:extra-deps {com.monkeyprojects/build {:mvn/version "0.2-SNAPSHOT"}}
    :extra-paths ["test"]
    :exec-fn monkey.test/all}
 
+  :junit
+  {:exec-fn monkey.test/junit}
+
   :jar
-  {:extra-deps {com.monkeyprojects/build {:mvn/version "0.1.1"}}
+  {:extra-deps {com.monkeyprojects/build {:mvn/version "0.2-SNAPSHOT"}}
    :exec-fn monkey.build/jar}
   
-  :deploy
+  :publish
   {:exec-fn monkey.build/jar+deploy
    :exec-args {:jar "target/plugin-clj.jar"
                :version-env "LIB_VERSION"

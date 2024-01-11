@@ -2,6 +2,8 @@
 
 This is a library that's meant as a plugin for [MonkeyCI](https://monkeyci.com) builds.
 
+[![Clojars Project](https://img.shields.io/clojars/v/com.monkeyci/plugin-clj.svg)](https://clojars.org/com.monkeyci/plugin-clj)
+
 ## Getting Started
 
 After creating an account on [MonkeyCI](https://app.monkeyci.com/sign-on), just include

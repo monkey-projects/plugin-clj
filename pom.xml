@@ -24,4 +24,16 @@
   <scm>
     <url>https://github.com/monkey-projects/plugin-clj</url>
   </scm>
+  <dependencies>
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojure</artifactId>
+      <version>1.11.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.monkeyci</groupId>
+      <artifactId>script</artifactId>
+      <version>0.1.2-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
 </project>
