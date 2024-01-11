@@ -1,5 +1,6 @@
 (ns monkey.ci.plugin.clj
-  (:require [clojure.xml :as xml]
+  (:require [babashka.fs :as fs]
+            [clojure.xml :as xml]
             [monkey.ci.build
              [api :as api]
              [core :as b]]))
@@ -15,8 +16,15 @@
 
 ;; TODO Replace this with b/main-branch? when it becomes available
 (defn main-branch? [ctx]
+  (println "Checking if" (b/branch ctx) "is the main branch")
   (= (main-branch ctx)
      (b/branch ctx)))
+
+;; TODO Move this to the script lib
+(defn as-file [ctx f]
+  (if (fs/absolute? f) 
+    (fs/file f)
+    (fs/file (get-in ctx [:step :work-dir]) f)))
 
 (defn version-tag? [{:keys [tag-regex] :or {tag-regex all-regex}} ctx]
   (some->> (b/tag ctx)
@@ -44,12 +52,14 @@
   "Given the step context, reads the `pom.xml` file from the configured location
    and returns the version tag value."
   [{:keys [pom-file] :or {pom-file "pom.xml"}} ctx]
-  (->> (xml/parse pom-file)
-       :content
-       (filter (comp (partial = :version) :tag))
-       (first)
-       :content
-       (first)))
+  (let [f (as-file ctx pom-file)]
+    (when (fs/exists? f)
+      (->> (xml/parse f)
+           :content
+           (filter (comp (partial = :version) :tag))
+           (first)
+           :content
+           (first)))))
 
 (defn- add-version [env
                     {:keys [version-var pom-version-reader]
@@ -64,14 +74,15 @@
 (defn deps-publish [{:keys [publish-alias]
                      :or {publish-alias "publish"}
                      :as conf}]
-  (fn [ctx]
-    (when (should-publish? conf ctx)
-      (-> conf
-          (clj-deps (str "-X" publish-alias))
-          (assoc :name "deploy"
-                 :container/env (-> (api/build-params ctx)
-                                    (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])
-                                    (add-version conf ctx)))))))
+  {:name "publish"
+   :action
+   (fn [ctx]
+     (when (should-publish? conf ctx)
+       (-> conf
+           (clj-deps (str "-X" publish-alias))
+           (assoc :container/env (-> (api/build-params ctx)
+                                     (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])
+                                     (add-version conf ctx))))))})
 
 (defn deps-library
   "Creates a pipeline that tests and deploys a clojure library using deps.edn."

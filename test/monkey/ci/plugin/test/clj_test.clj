@@ -8,7 +8,7 @@
   (comp first :steps))
 
 (defn publish-step [p ctx]
-  (let [s (-> p :steps second)]
+  (let [s (-> p :steps second :action)]
     (s ctx)))
 
 (deftest deps-library
