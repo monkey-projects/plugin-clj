@@ -72,7 +72,7 @@
       v (assoc version-var v))))
 
 (defn deps-publish [{:keys [publish-alias]
-                     :or {publish-alias "publish"}
+                     :or {publish-alias ":jar:publish"}
                      :as conf}]
   {:name "publish"
    :action

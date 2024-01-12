@@ -40,6 +40,23 @@ It will run the unit tests, that are assumed to be declared as an alias function
 the library from the committed `pom.xml`.  These values can be overridden using config
 parameters.
 
+### Options
+
+These are the options you can use to configure the library build:
+|Option|Default|Description|
+|---|---|---|
+|`:tag-regex`|`#".*"`|Regex to filter release tags|
+|`:clj-img`|`docker.io/clojure:...`|The image to use to test and publish.  Tag depends on lein or cli library and evolves with the lib version.  See `monkey.ci.plugin.clj/default-deps-img`.|
+|`:test-alias`|`:test:junit`|The alias to apply when building a library that uses `deps.edn`|
+|`:publish-alias`|`:jar:publish`|The alias to apply when publishing the library|
+|`:pom-file`|`pom.xml`|The location of the pom file, relative to the checkout dir.|
+|`:version-var`|`LIB_VERSION`|When publishing, the version will be stored in this env var.|
+
+Since this is Clojure, you can of course pick the parts you like.  The `library` function just
+returns a pipeline, to which you can add more steps, or you can include it in a larger pipeline
+list.  Or you can call the functions that have been provided to create the individual steps.
+See [the source](src/monkey/ci/plugin/clj.clj) for this.
+
 ## License
 
 Copyright (c) 2024 by Monkey Projects.
