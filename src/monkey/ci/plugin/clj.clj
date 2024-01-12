@@ -16,7 +16,6 @@
 
 ;; TODO Replace this with b/main-branch? when it becomes available
 (defn main-branch? [ctx]
-  (println "Checking if" (b/branch ctx) "is the main branch")
   (= (main-branch ctx)
      (b/branch ctx)))
 
