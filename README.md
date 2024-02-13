@@ -28,7 +28,7 @@ example build script:
 ```clojure
 (require '[monkey.ci.plugin.clj :as p])
 
-(p/library {:tag-regex p/version-regex})
+(p/deps-library {:tag-regex p/version-regex})
 ```
 
 This is almost the most basic configuration.  You could also leave out the entire

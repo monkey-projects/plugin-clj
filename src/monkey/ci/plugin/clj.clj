@@ -3,55 +3,46 @@
             [clojure.xml :as xml]
             [monkey.ci.build
              [api :as api]
-             [core :as b]]))
+             [core :as b]
+             [shell :as s]]))
 
 (def version-regex #"^\d+\.\d+(\.\d+)?$")
 (def all-regex #".*")
 
 (def default-deps-img "docker.io/clojure:temurin-21-bookworm-slim")
 
-;; TODO Replace this with b/main-branch when it becomes available
-(defn main-branch [_]
-  "main")
-
-;; TODO Replace this with b/main-branch? when it becomes available
-(defn main-branch? [ctx]
-  (= (main-branch ctx)
-     (b/branch ctx)))
-
-;; TODO Move this to the script lib
-(defn as-file [ctx f]
-  (if (fs/absolute? f) 
-    (fs/file f)
-    (fs/file (get-in ctx [:step :work-dir]) f)))
-
 (defn version-tag? [{:keys [tag-regex] :or {tag-regex all-regex}} ctx]
   (some->> (b/tag ctx)
            (re-matches tag-regex)))
 
 (defn should-publish? [conf ctx]
-  (or (main-branch? ctx)
+  (or (b/main-branch? ctx)
       (version-tag? conf ctx)))
 
-(defn clj-deps [{:keys [clj-img]
+(defn clj-deps [ctx
+                {:keys [clj-img]
                  :or {clj-img default-deps-img}}
                 cmd]
   {:container/image clj-img
-   :script [(str "clojure " cmd)]})
+   :script [(str (format "clojure -Sdeps '{:mvn/local-repo \"%s\"}'"  (s/in-work ctx ".m2")) cmd)]
+   :caches [{:id "clj:mvn-repo"
+             :path ".m2"}]})
 
 (defn deps-test [{:keys [test-alias clj-img]
                   :or {test-alias ":test:junit"
                        clj-img default-deps-img}
                   :as conf}]
-  (-> conf
-      (clj-deps (str "-X" test-alias))
-      (assoc :name "test")))
+  {:name "test"
+   :action (fn [ctx]
+             (-> ctx
+                 (clj-deps conf (str "-X" test-alias))
+                 (assoc :name "test")))})
 
 (defn read-pom-version
   "Given the step context, reads the `pom.xml` file from the configured location
    and returns the version tag value."
   [{:keys [pom-file] :or {pom-file "pom.xml"}} ctx]
-  (let [f (as-file ctx pom-file)]
+  (let [f (s/in-work ctx pom-file)]
     (when (fs/exists? f)
       (->> (xml/parse f)
            :content
@@ -77,8 +68,8 @@
    :action
    (fn [ctx]
      (when (should-publish? conf ctx)
-       (-> conf
-           (clj-deps (str "-X" publish-alias))
+       (-> ctx
+           (clj-deps conf (str "-X" publish-alias))
            (assoc :container/env (-> (api/build-params ctx)
                                      (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])
                                      (add-version conf ctx))))))})

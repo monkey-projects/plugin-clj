@@ -1,4 +1,4 @@
-{:deps {com.monkeyci/script {:mvn/version "0.1.1.1"}}
+{:deps {com.monkeyci/script {:mvn/version "0.2.4.2"}}
 
  :paths ["src"]
  
@@ -10,6 +10,9 @@
 
   :junit
   {:exec-fn monkey.test/junit}
+
+  :watch
+  {:exec-fn monkey.test/watch}
 
   :jar
   {:extra-deps {com.monkeyprojects/build {:mvn/version "0.2.0"}}

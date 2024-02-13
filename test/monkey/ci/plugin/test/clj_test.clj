@@ -1,15 +1,16 @@
 (ns monkey.ci.plugin.test.clj-test
   (:require [clojure.test :refer [deftest testing is]]
+            [clojure.string :as cs]
             [monkey.ci.build.api :as api]
             [monkey.ci.plugin.clj :as sut])
   (:import java.io.File))
 
-(def test-step
-  (comp first :steps))
-
-(defn publish-step [p ctx]
-  (let [s (-> p :steps second :action)]
+(defn- run-step [s p ctx]
+  (let [s (-> p :steps s :action)]
     (s ctx)))
+
+(def test-step (partial run-step first))
+(def publish-step (partial run-step second))
 
 (deftest deps-library
   (testing "returns a pipeline with two steps"
@@ -21,20 +22,27 @@
     (testing "invokes default container img"
       (is (= sut/default-deps-img
              (-> (sut/deps-library)
-                 (test-step)
+                 (test-step {})
                  :container/image))))
 
     (testing "invokes configured container img"
       (is (= "test-img"
              (-> (sut/deps-library {:clj-img "test-img"})
-                 (test-step)
+                 (test-step {})
                  :container/image))))
 
     (testing "has `test` name"
       (is (= "test"
              (-> (sut/deps-library)
-                 (test-step)
-                 :name)))))
+                 (test-step {})
+                 :name))))
+
+    (testing "uses mvn cache"
+      (let [s (-> (sut/deps-library)
+                  (test-step {:step {:work-dir "/test/dir"}}))]
+        (is (not-empty (:caches s)))
+        (is (cs/includes? (first (:script s)) ":mvn/local-repo \"/test/dir/.m2\"")
+            (:script s)))))
 
   (testing "publish step"
     (with-redefs [api/build-params (constantly
@@ -86,7 +94,9 @@
 
 (deftest read-pom-version
   (testing "reads `pom.xml` file and extracts version"
-    (let [f (File/createTempFile "pom-" ".xml")]
+    (let [tmp-dir (System/getProperty "java.io.tmpdir")
+          f (File/createTempFile "pom-" ".xml")]
       (is (nil? (spit f "<project><version>test-version</version></project>")))
-      (is (= "test-version" (sut/read-pom-version {:pom-file (.getCanonicalPath f)} {})))
+      (is (= "test-version" (sut/read-pom-version {:pom-file (.getName f)}
+                                                  {:step {:work-dir tmp-dir}})))
       (is (true? (.delete f))))))
