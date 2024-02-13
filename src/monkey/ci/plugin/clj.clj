@@ -24,7 +24,7 @@
                  :or {clj-img default-deps-img}}
                 cmd]
   {:container/image clj-img
-   :script [(str (format "clojure -Sdeps '{:mvn/local-repo \"%s\"}'"  (s/in-work ctx ".m2")) cmd)]
+   :script [(str (format "clojure -Sdeps '{:mvn/local-repo \"%s\"}' "  (s/in-work ctx ".m2")) cmd)]
    :caches [{:id "clj:mvn-repo"
              :path ".m2"}]})
 
