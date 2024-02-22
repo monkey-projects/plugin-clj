@@ -37,11 +37,11 @@
                  (test-step {})
                  :name))))
 
-    (testing "uses mvn cache"
+    (testing "uses mvn cache as local dir"
       (let [s (-> (sut/deps-library)
                   (test-step {:step {:work-dir "/test/dir"}}))]
         (is (not-empty (:caches s)))
-        (is (cs/includes? (first (:script s)) ":mvn/local-repo \"/test/dir/.m2\"")
+        (is (cs/includes? (first (:script s)) ":mvn/local-repo \".m2\"")
             (:script s)))))
 
   (testing "publish step"
