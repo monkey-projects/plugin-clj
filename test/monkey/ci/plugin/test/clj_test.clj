@@ -6,7 +6,7 @@
   (:import java.io.File))
 
 (defn- run-step [s p ctx]
-  (let [s (-> p :steps s :action)]
+  (let [s (-> p :jobs s :action)]
     (s ctx)))
 
 (def test-step (partial run-step first))
@@ -15,7 +15,7 @@
 (deftest deps-library
   (testing "returns a pipeline with two steps"
     (is (= 2 (-> (sut/deps-library)
-                 :steps
+                 :jobs
                  (count)))))
 
   (testing "test step"
@@ -98,5 +98,5 @@
           f (File/createTempFile "pom-" ".xml")]
       (is (nil? (spit f "<project><version>test-version</version></project>")))
       (is (= "test-version" (sut/read-pom-version {:pom-file (.getName f)}
-                                                  {:step {:work-dir tmp-dir}})))
+                                                  {:job {:work-dir tmp-dir}})))
       (is (true? (.delete f))))))

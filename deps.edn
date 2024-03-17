@@ -1,4 +1,4 @@
-{:deps {com.monkeyci/script {:mvn/version "0.2.4.2"}}
+{:deps {com.monkeyci/app {:mvn/version "0.4.0"}}
 
  :paths ["src"]
  
