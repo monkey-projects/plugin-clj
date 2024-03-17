@@ -22,7 +22,7 @@ the `main`branch, or when you push a tag, in which case the tag name will be use
 the release version.  You could optionally specify a regex that is applied to the tag
 name.  If the regex does not match, it is not considered to be a deployment.
 
-In order to use it in your build script, just use the `library` pipeline, like in this
+In order to use it in your build script, just use the `deps-library` function, like in this
 example build script:
 
 ```clojure
@@ -52,10 +52,10 @@ These are the options you can use to configure the library build:
 |`:pom-file`|`pom.xml`|The location of the pom file, relative to the checkout dir.|
 |`:version-var`|`LIB_VERSION`|When publishing, the version will be stored in this env var.|
 
-Since this is Clojure, you can of course pick the parts you like.  The `library` function just
-returns a pipeline, to which you can add more steps, or you can include it in a larger pipeline
-list.  Or you can call the functions that have been provided to create the individual steps.
-See [the source](src/monkey/ci/plugin/clj.clj) for this.
+Since this is Clojure, you can of course pick the parts you like.  The `...-library` functions just
+return jobs, to which you can add more, or you can include it in a larger job list.  Or you can call
+the functions that have been provided to create the individual jobs.  See [the
+source](src/monkey/ci/plugin/clj.clj) for this.
 
 ## License
 

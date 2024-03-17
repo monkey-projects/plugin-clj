@@ -5,12 +5,6 @@
             [monkey.ci.plugin.clj :as sut])
   (:import java.io.File))
 
-(defn- resolve-job [at job-fn ctx]
-  (let [s ((-> (job-fn) :jobs at) ctx)]
-    (s ctx)))
-
-(def publish-job (partial run-job second))
-
 (deftest deps-library
   (testing "returns function"
     (let [l (sut/deps-library)]
