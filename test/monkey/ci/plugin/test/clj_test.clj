@@ -5,92 +5,109 @@
             [monkey.ci.plugin.clj :as sut])
   (:import java.io.File))
 
-(defn- run-step [s p ctx]
-  (let [s (-> p :jobs s :action)]
+(defn- resolve-job [at job-fn ctx]
+  (let [s ((-> (job-fn) :jobs at) ctx)]
     (s ctx)))
 
-(def test-step (partial run-step first))
-(def publish-step (partial run-step second))
+(def publish-job (partial run-job second))
 
 (deftest deps-library
-  (testing "returns a pipeline with two steps"
-    (is (= 2 (-> (sut/deps-library)
-                 :jobs
-                 (count)))))
+  (testing "returns function"
+    (let [l (sut/deps-library)]
+      (is (fn? l))
 
-  (testing "test step"
-    (testing "invokes default container img"
-      (is (= sut/default-deps-img
-             (-> (sut/deps-library)
-                 (test-step {})
-                 :container/image))))
+      (testing "that creates one job by default"
+        (let [jobs (l {:build {:git {:ref "refs/heads/feature/test"}}})]
+          (is (= 1 (count jobs)))))
 
-    (testing "invokes configured container img"
-      (is (= "test-img"
-             (-> (sut/deps-library {:clj-img "test-img"})
-                 (test-step {})
-                 :container/image))))
+      (testing "that creates two jobs for main branch"
+        (let [jobs (l {:build {:git {:main-branch "main"
+                                     :ref "refs/heads/main"}}})]
+          (is (= 2 (count jobs)))))
 
-    (testing "has `test` name"
-      (is (= "test"
-             (-> (sut/deps-library)
-                 (test-step {})
-                 :name))))
+      (testing "that creates two jobs for tag"
+        (is (= 2 (count (l {:build {:git {:ref "refs/tags/v1"}}})))))
+      
+      (testing "that creates two jobs configured version tag"
+        (let [l (sut/deps-library {:tag-regex #"v\d+"})]
+          (is (= 2 (count (l {:build {:git {:main-branch "main"
+                                            :ref "refs/tags/v1"}}}))))
+          (is (= 1 (count (l {:build {:git {:main-branch "main"
+                                            :ref "refs/tags/other"}}}))))))))
 
-    (testing "uses mvn cache as local dir"
-      (let [s (-> (sut/deps-library)
-                  (test-step {:step {:work-dir "/test/dir"}}))]
-        (is (not-empty (:caches s)))
-        (is (cs/includes? (first (:script s)) ":mvn/local-repo \".m2\"")
-            (:script s)))))
-
-  (testing "publish step"
-    (with-redefs [api/build-params (constantly
-                                    {"CLOJARS_USERNAME" "testuser"
-                                     "CLOJARS_PASSWORD" "testpass"})]
-      (testing "`nil` if it's not the main branch or a tag"
-        (is (nil? (-> (sut/deps-library)
-                      (publish-step {:build {:git {:main-branch "main"
-                                                   :ref "refs/heads/other"}}})))))
-
+  (testing "test job"
+    (letfn [(test-job [conf ctx]
+              (-> ((sut/deps-library conf) ctx)
+                  first))]
+      
       (testing "invokes default container img"
         (is (= sut/default-deps-img
-               (-> (sut/deps-library)
-                   (publish-step {:build {:git {:main-branch "main"
-                                                :ref "refs/heads/main"}}})
+               (-> (test-job {} {})
                    :container/image))))
 
       (testing "invokes configured container img"
         (is (= "test-img"
-               (-> (sut/deps-library {:clj-img "test-img"})
-                   (publish-step {:build {:git {:ref "refs/tags/publish-me"}}})
+               (-> (test-job {:clj-img "test-img"} {})
                    :container/image))))
 
-      (testing "takes clojars creds from build params"
-        (is (= ["testuser" "testpass"]
-               (-> (sut/deps-library)
-                   (publish-step {:build {:git {:main-branch "main"
-                                                :ref "refs/heads/main"}}})
-                   :container/env
-                   (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])
-                   (vals)))))
+      (testing "has `test` id"
+        (is (= "test"
+               (:id (test-job {} {})))))
 
-      (testing "adds version env var"
-        (testing "from tag"
-          (is (= "test-version"
-                 (-> (sut/deps-library)
-                     (publish-step {:build {:git {:ref "refs/tags/test-version"}}})
-                     :container/env
-                     (get "LIB_VERSION")))))
+      (testing "uses mvn cache as local dir"
+        (let [s (test-job {} {:job {:work-dir "/test/dir"}})]
+          (is (not-empty (:caches s)))
+          (is (cs/includes? (first (:script s)) ":mvn/local-repo \".m2\"")
+              (:script s))))))
 
-        (testing "from `pom.xml`"
-          (is (= "test-version"
-                 (-> (sut/deps-library {:pom-version-reader (constantly "test-version")
-                                        :version-var "MY_VERSION"})
-                     (publish-step {:build {:git {:main-branch "main"
-                                                  :ref "refs/heads/main"}}})
+  (testing "publish job"
+    (with-redefs [api/build-params (constantly
+                                    {"CLOJARS_USERNAME" "testuser"
+                                     "CLOJARS_PASSWORD" "testpass"})]
+      (letfn [(publish-job [conf ctx]
+                (let [ctx (assoc-in ctx [:build :git :main-branch] "main")]
+                  (when-let [f (-> ((sut/deps-library conf) ctx)
+                                   second)]
+                    (f ctx))))]
+        
+        (testing "`nil` if it's not the main branch or a tag"
+          (is (nil? (publish-job {} {:build {:git {:ref "refs/heads/other"}}}))))
+
+        (testing "invokes default container img"
+          (is (= sut/default-deps-img
+                 (-> (publish-job {} {:build {:git {:ref "refs/heads/main"}}})
+                     :container/image))))
+
+        (testing "invokes configured container img"
+          (is (= "test-img"
+                 (-> (publish-job {:clj-img "test-img"}
+                                  {:build {:git {:ref "refs/tags/publish-me"}}})
+                     :container/image))))
+
+        (testing "takes clojars creds from build params"
+          (is (= ["testuser" "testpass"]
+                 (-> (publish-job {}
+                                  {:build {:git {:ref "refs/heads/main"}}})
                      :container/env
-                     (get "MY_VERSION")))))))))
+                     (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])
+                     (vals)))))
+
+        (testing "adds version env var"
+          (testing "from tag"
+            (is (= "test-version"
+                   (-> (publish-job {}
+                                    {:build {:git {:ref "refs/tags/test-version"}}})
+                       :container/env
+                       (get "LIB_VERSION")))))
+
+          (testing "from `pom.xml`"
+            (is (= "test-version"
+                   (-> (publish-job {:pom-version-reader (constantly "test-version")
+                                     :version-var "MY_VERSION"}
+                                    {:build {:git {:main-branch "main"
+                                                   :ref "refs/heads/main"}}})
+                       :container/env
+                       (get "MY_VERSION"))))))))))
 
 (deftest read-pom-version
   (testing "reads `pom.xml` file and extracts version"

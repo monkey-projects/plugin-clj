@@ -19,11 +19,12 @@
   (or (b/main-branch? ctx)
       (version-tag? conf ctx)))
 
-(defn clj-deps [ctx
+(defn clj-deps [id
                 {:keys [clj-img]
                  :or {clj-img default-deps-img}}
                 cmd]
-  {:container/image clj-img
+  {:id id
+   :container/image clj-img
    ;; Must use a relative path, because running in a container results in the wrong path
    :script [(str "clojure -Sdeps '{:mvn/local-repo \".m2\"}' " cmd)]
    :caches [{:id "clj:mvn-repo"
@@ -33,11 +34,7 @@
                   :or {test-alias ":test:junit"
                        clj-img default-deps-img}
                   :as conf}]
-  {:name "test"
-   :action (fn [ctx]
-             (-> ctx
-                 (clj-deps conf (str "-X" test-alias))
-                 (assoc :name "test")))})
+  (clj-deps "test" conf (str "-X" test-alias)))
 
 (defn read-pom-version
   "Given the step context, reads the `pom.xml` file from the configured location
@@ -65,25 +62,24 @@
 (defn deps-publish [{:keys [publish-alias]
                      :or {publish-alias ":jar:publish"}
                      :as conf}]
-  {:name "publish"
-   :action
-   (fn [ctx]
-     (when (should-publish? conf ctx)
-       (-> ctx
-           (clj-deps conf (str "-X" publish-alias))
-           (assoc :container/env (-> (api/build-params ctx)
-                                     (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])
-                                     (add-version conf ctx))))))})
+  (fn [ctx]
+    (when (should-publish? conf ctx)
+      (-> (clj-deps "publish" conf (str "-X" publish-alias))
+          (assoc :container/env (-> (api/build-params ctx)
+                                    (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])
+                                    (add-version conf ctx))
+                 :dependencies ["test"])))))
 
 (defn deps-library
   "Creates a pipeline that tests and deploys a clojure library using deps.edn."
   [& [{:keys [name clj-img tag-regex]
        :or {name "build"}
        :as conf}]]
-  (b/pipeline
-   {:name name
-    :steps
-    ((juxt deps-test deps-publish) conf)}))
+  (fn [ctx]
+    (let [f (->> (cond-> [deps-test]
+                   (should-publish? conf ctx) (conj deps-publish))
+                 (apply juxt))]
+      (f conf))))
 
 (defn lein-library
   "Creates a pipeline that tests and deploys a clojure library using leiningen."
