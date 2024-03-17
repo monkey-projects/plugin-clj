@@ -73,6 +73,11 @@
         (testing "`nil` if it's not the main branch or a tag"
           (is (nil? (publish-job {} {:build {:git {:ref "refs/heads/other"}}}))))
 
+        (testing "depends on test"
+          (is (= ["test"]
+                 (-> (publish-job {} {:build {:git {:ref "refs/heads/main"}}})
+                     :dependencies))))
+        
         (testing "invokes default container img"
           (is (= sut/default-deps-img
                  (-> (publish-job {} {:build {:git {:ref "refs/heads/main"}}})
