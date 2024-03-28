@@ -23,12 +23,12 @@
                 {:keys [clj-img]
                  :or {clj-img default-deps-img}}
                 cmd]
-  {:id id
-   :container/image clj-img
-   ;; Must use a relative path, because running in a container results in the wrong path
-   :script [(str "clojure -Sdeps '{:mvn/local-repo \".m2\"}' " cmd)]
-   :caches [{:id "clj:mvn-repo"
-             :path ".m2"}]})
+  (b/container-job id
+   {:container/image clj-img
+    ;; Must use a relative path, because running in a container results in the wrong path
+    :script [(str "clojure -Sdeps '{:mvn/local-repo \".m2\"}' " cmd)]
+    :caches [{:id "clj:mvn-repo"
+              :path ".m2"}]}))
 
 (defn deps-test [{:keys [test-alias clj-img]
                   :or {test-alias ":test:junit"
