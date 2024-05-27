@@ -4,7 +4,8 @@
             [monkey.ci.build
              [api :as api]
              [core :as b]
-             [shell :as s]]))
+             [shell :as s]]
+            [monkey.ci.ext.junit]))
 
 (def version-regex #"^\d+\.\d+(\.\d+)?$")
 (def all-regex #".*")
@@ -30,11 +31,17 @@
     :caches [{:id "clj:mvn-repo"
               :path ".m2"}]}))
 
-(defn deps-test [{:keys [test-alias clj-img]
+(defn deps-test [{:keys [test-alias clj-img artifact-id junit-file]
                   :or {test-alias ":test:junit"
-                       clj-img default-deps-img}
+                       clj-img default-deps-img
+                       artifact-id "test-junit"
+                       junit-file "junit.xml"}
                   :as conf}]
-  (clj-deps "test" conf (str "-X" test-alias)))
+  (-> (clj-deps "test" conf (str "-X" test-alias))
+      (assoc :save-artifacts [{:id artifact-id
+                               :path junit-file}]
+             :junit {:artifact-id artifact-id
+                     :path junit-file})))
 
 (defn read-pom-version
   "Given the step context, reads the `pom.xml` file from the configured location

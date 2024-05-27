@@ -52,7 +52,17 @@
         (let [s (test-job {} {:job {:work-dir "/test/dir"}})]
           (is (not-empty (:caches s)))
           (is (cs/includes? (first (:script s)) ":mvn/local-repo \".m2\"")
-              (:script s))))))
+              (:script s))))
+
+      (testing "publishes junit.xml artifact"
+        (let [s (test-job {} {:job {:work-dir "/test/dir"}})]
+          (is (= [{:id "test-junit"
+                   :path "junit.xml"}]
+                 (:save-artifacts s)))))
+
+      (testing "adds test extension settings"
+        (let [s (test-job {} {:job {:work-dir "/test/dir"}})]
+          (is (not-empty (:junit s)))))))
 
   (testing "publish job"
     (with-redefs [api/build-params (constantly
