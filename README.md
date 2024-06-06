@@ -6,7 +6,7 @@ This is a library that's meant as a plugin for [MonkeyCI](https://monkeyci.com) 
 
 ## Getting Started
 
-After creating an account on [MonkeyCI](https://app.monkeyci.com/sign-on), just include
+After creating an account on [MonkeyCI](https://monkeyci.com), just include
 the dependency in your `.monkeyci/deps.edn`:
 
 ```clojure
