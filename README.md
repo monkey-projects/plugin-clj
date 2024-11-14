@@ -22,8 +22,10 @@ the `main`branch, or when you push a tag, in which case the tag name will be use
 the release version.  You could optionally specify a regex that is applied to the tag
 name.  If the regex does not match, it is not considered to be a deployment.
 
-In order to use it in your build script, just use the `deps-library` function, like in this
-example build script:
+### Clojure CLI
+
+In order to use it in your build script when you use the [Clojure cli](https://clojure.org/reference/deps_and_cli),
+just use the `deps-library` function, like in this example build script:
 
 ```clojure
 (require '[monkey.ci.plugin.clj :as p])
@@ -41,19 +43,26 @@ these will be parsed and added to the job results.  It reads all necessary infor
 to deploy the library from the committed `pom.xml`.  These values can be overridden using
 config parameters.
 
+### Leiningen
+
+When using [Leiningen](https://leiningen.org), you use the `lein-library` function instead.
+It works more or less the same as the CLI variant, but uses a differend container image and
+invokes `lein` instead.  When publishing, the version is either taken from the `project.clj`
+file, or from the commit tag.
+
 ### Options
 
 These are the options you can use to configure the library build:
-|Option|Default|Description|
+|Option|Default (cli)|Default (lein)|Description|
 |---|---|---|
-|`:tag-regex`|`#".*"`|Regex to filter release tags|
-|`:clj-img`|`docker.io/clojure:...`|The image to use to test and publish.  Tag depends on lein or cli library and evolves with the lib version.  See `monkey.ci.plugin.clj/default-deps-img`.|
-|`:test-alias`|`:test:junit`|The alias to apply when building a library that uses `deps.edn`|
-|`:artifact-id`|`test-junit`|The id given to the artifact that holds test results|
-|`:junit-file`|`junit.xml`|The path of the junit results xml file|
-|`:publish-alias`|`:jar:publish`|The alias to apply when publishing the library|
-|`:pom-file`|`pom.xml`|The location of the pom file, relative to the checkout dir.|
-|`:version-var`|`LIB_VERSION`|When publishing, the version will be stored in this env var.|
+|`:tag-regex`|`#".*"`|`#".*"`|Regex to filter release tags|
+|`:clj-img`|`docker.io/clojure:...`|The image to use to test and publish.  Tag depends on lein or cli library and evolves with the lib version.  See `monkey.ci.plugin.clj/default-deps-img` or `monkey.ci.plugin.clj/default-lein-img`.|
+|`:test-alias`|`:test:junit`|`test-junit`|The alias to apply when building a library.|
+|`:artifact-id`|`test-junit`|`test-junit`|The id given to the artifact that holds test results|
+|`:junit-file`|`junit.xml`|`junit.xml`|The path of the junit results xml file|
+|`:publish-alias`|`:jar:publish`|`publish`|The alias to apply when publishing the library|
+|`:pom-file`|`pom.xml`|-|The location of the pom file, relative to the checkout dir.|
+|`:version-var`|`LIB_VERSION`|-|When publishing, the version will be stored in this env var.|
 
 Since this is Clojure, you can of course pick the parts you like.  The `...-library` functions just
 return jobs, to which you can add more, or you can include it in a larger job list.  Or you can call

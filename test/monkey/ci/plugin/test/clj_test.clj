@@ -118,6 +118,114 @@
                        :container/env
                        (get "MY_VERSION"))))))))))
 
+(deftest lein-library
+  (testing "returns function"
+    (let [l (sut/lein-library)]
+      (is (fn? l))
+
+      (testing "that creates one job by default"
+        (let [jobs (l {:build {:git {:ref "refs/heads/feature/test"}}})]
+          (is (= 1 (count jobs)))))
+
+      (testing "that creates two jobs for main branch"
+        (let [jobs (l {:build {:git {:main-branch "main"
+                                     :ref "refs/heads/main"}}})]
+          (is (= 2 (count jobs)))))
+
+      (testing "that creates two jobs for tag"
+        (is (= 2 (count (l {:build {:git {:ref "refs/tags/v1"}}})))))
+      
+      (testing "that creates two jobs configured version tag"
+        (let [l (sut/deps-library {:tag-regex #"v\d+"})]
+          (is (= 2 (count (l {:build {:git {:main-branch "main"
+                                            :ref "refs/tags/v1"}}}))))
+          (is (= 1 (count (l {:build {:git {:main-branch "main"
+                                            :ref "refs/tags/other"}}}))))))))
+
+  (testing "test job"
+    (letfn [(test-job [conf ctx]
+              (-> ((sut/lein-library conf) ctx)
+                  first))]
+      
+      (testing "invokes default container img"
+        (is (= sut/default-lein-img
+               (-> (test-job {} {})
+                   :container/image))))
+
+      (testing "invokes configured container img"
+        (is (= "test-img"
+               (-> (test-job {:clj-img "test-img"} {})
+                   :container/image))))
+
+      (testing "has `test` id"
+        (is (= "test"
+               (:id (test-job {} {})))))
+
+      (testing "publishes junit.xml artifact"
+        (let [s (test-job {} {:job {:work-dir "/test/dir"}})]
+          (is (= [{:id "test-junit"
+                   :path "junit.xml"}]
+                 (:save-artifacts s)))))
+
+      (testing "adds test extension settings"
+        (let [s (test-job {} {:job {:work-dir "/test/dir"}})]
+          (is (not-empty (:junit s)))))
+
+      (testing "activates additional profile for m2 cache")))
+
+  (testing "publish job"
+    (with-redefs [api/build-params (constantly
+                                    {"CLOJARS_USERNAME" "testuser"
+                                     "CLOJARS_PASSWORD" "testpass"})]
+      (letfn [(publish-job [conf ctx]
+                (let [ctx (assoc-in ctx [:build :git :main-branch] "main")]
+                  (when-let [f (-> ((sut/lein-library conf) ctx)
+                                   second)]
+                    (f ctx))))]
+        
+        (testing "`nil` if it's not the main branch or a tag"
+          (is (nil? (publish-job {} {:build {:git {:ref "refs/heads/other"}}}))))
+
+        (testing "depends on test"
+          (is (= ["test"]
+                 (-> (publish-job {} {:build {:git {:ref "refs/heads/main"}}})
+                     :dependencies))))
+        
+        (testing "invokes default container img"
+          (is (= sut/default-lein-img
+                 (-> (publish-job {} {:build {:git {:ref "refs/heads/main"}}})
+                     :container/image))))
+
+        (testing "invokes configured container img"
+          (is (= "test-img"
+                 (-> (publish-job {:clj-img "test-img"}
+                                  {:build {:git {:ref "refs/tags/publish-me"}}})
+                     :container/image))))
+
+        (testing "takes clojars creds from build params"
+          (is (= ["testuser" "testpass"]
+                 (-> (publish-job {}
+                                  {:build {:git {:ref "refs/heads/main"}}})
+                     :container/env
+                     (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])
+                     (vals)))))
+
+        (testing "when tag specified changes version"
+          (let [script (-> (publish-job {}
+                                        {:build {:git {:ref "refs/tags/test-version"}}})
+                           :script)]
+            (is (= 2 (count script)))
+            (is (= "lein change version set '\"test-version\"'"
+                   (first script)))))
+
+        (testing "when no tag specified, leaves version unchanged"
+          (let [script (-> (publish-job {}
+                                        {:build {:git {:main-branch "main"
+                                                       :ref "refs/heads/main"}}})
+                           :script)]
+            (is (= 1 (count script)))
+            (is (= "lein deploy" (first script)))))))))
+
 (deftest read-pom-version
   (testing "reads `pom.xml` file and extracts version"
     (let [tmp-dir (System/getProperty "java.io.tmpdir")

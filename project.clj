@@ -1,0 +1,20 @@
+(defproject com.monkeyci/plugin-clj "0.4.0-SNAPSHOT"
+  :description "MonkeyCI plugin for clj projects"
+  :url "https://github.com/monkey-projects/plugin-clj"
+  :license {:name "MIT License"
+            :url "https://mit-license.org/"
+            :distribution :repo}
+  :dependencies [[com.monkeyci/app "0.9.2" :exclusions [com.monkeyprojects/oci-common]]
+                 [com.monkeyci/plugin-junit "0.1.0"]
+                 [com.monkeyprojects/oci-common "0.1.2"]]
+
+  :profiles
+  {:dev
+   {:dependencies [[lambdaisland/kaocha "1.91.1392"]
+                   [lambdaisland/kaocha-junit-xml "1.17.101"]]}}
+
+  :aliases
+  {"test-junit" ["run" "-m" "kaocha.runner"
+                 "--plugin" "kaocha.plugin/junit-xml"
+                 "--junit-xml-file" "junit.xml"]})
+
