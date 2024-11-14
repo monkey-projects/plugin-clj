@@ -54,7 +54,7 @@ file, or from the commit tag.
 
 These are the options you can use to configure the library build:
 |Option|Default (cli)|Default (lein)|Description|
-|---|---|---|
+|---|---|---|---|
 |`:tag-regex`|`#".*"`|`#".*"`|Regex to filter release tags|
 |`:clj-img`|`docker.io/clojure:...`|The image to use to test and publish.  Tag depends on lein or cli library and evolves with the lib version.  See `monkey.ci.plugin.clj/default-deps-img` or `monkey.ci.plugin.clj/default-lein-img`.|
 |`:test-alias`|`:test:junit`|`test-junit`|The alias to apply when building a library.|
