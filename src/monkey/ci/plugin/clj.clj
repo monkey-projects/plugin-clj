@@ -21,23 +21,29 @@
   (or (b/main-branch? ctx)
       (version-tag? conf ctx)))
 
+(defn- test-job-id [conf]
+  (get conf :test-job-id "test"))
+
+(defn- publish-job-id [conf]
+  (get conf :publish-job-id "publish"))
+
 (defn clj-deps [id
                 {:keys [clj-img]
                  :or {clj-img default-deps-img}}
                 cmd]
   (b/container-job id
-   {:container/image clj-img
-    ;; Must use a relative path, because running in a container results in the wrong path
-    :script [(str "clojure -Sdeps '{:mvn/local-repo \".m2\"}' " cmd)]
-    :caches [{:id "clj:mvn-repo"
-              :path ".m2"}]}))
+                   {:container/image clj-img
+                    ;; Must use a relative path, because running in a container results in the wrong path
+                    :script [(str "clojure -Sdeps '{:mvn/local-repo \".m2\"}' " cmd)]
+                    :caches [{:id "clj:mvn-repo"
+                              :path ".m2"}]}))
 
 (defn deps-test [{:keys [test-alias artifact-id junit-file]
                   :or {test-alias ":test:junit"
                        artifact-id "test-junit"
                        junit-file "junit.xml"}
                   :as conf}]
-  (-> (clj-deps "test" conf (str "-X" test-alias))
+  (-> (clj-deps (test-job-id conf) conf (str "-X" test-alias))
       (assoc :save-artifacts [{:id artifact-id
                                :path junit-file}]
              :junit {:artifact-id artifact-id
@@ -80,10 +86,10 @@
                      :as conf}]
   (fn [ctx]
     (when (should-publish? conf ctx)
-      (-> (clj-deps "publish" conf (str "-X" publish-alias))
+      (-> (clj-deps (publish-job-id conf) conf (str "-X" publish-alias))
           (assoc :container/env (-> (clojars-creds-params ctx)
                                     (add-version conf ctx))
-                 :dependencies ["test"])))))
+                 :dependencies [(test-job-id conf)])))))
 
 (defn- jobs-maker [test-fn publish-fn & [conf]]
   (fn [ctx]
@@ -113,7 +119,7 @@
                        artifact-id "test-junit"
                        junit-file "junit.xml"}
                   :as conf}]
-  (-> (clj-lein "test" conf [(str "lein " test-alias)])
+  (-> (clj-lein (test-job-id conf) conf [(str "lein " test-alias)])
       (assoc :save-artifacts [{:id artifact-id
                                :path junit-file}]
              :junit {:artifact-id artifact-id
@@ -124,12 +130,12 @@
                      :as conf}]
   (fn [ctx]
     (when (should-publish? conf ctx)
-      (-> (clj-lein "publish" conf
+      (-> (clj-lein (publish-job-id conf) conf
                     (cond->> [(str "lein " publish-alias)]
                       (version-tag? conf ctx)
                       (cons (format "lein change version set '\"%s\"'" (get-version conf ctx)))))
           (assoc :container/env (clojars-creds-params ctx)
-                 :dependencies ["test"])))))
+                 :dependencies [(test-job-id conf)])))))
 
 (def lein-library
   "Creates jobs that test and deploy a clojure library using leiningen."

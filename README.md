@@ -22,6 +22,9 @@ the `main`branch, or when you push a tag, in which case the tag name will be use
 the release version.  You could optionally specify a regex that is applied to the tag
 name.  If the regex does not match, it is not considered to be a deployment.
 
+You usually will want to run the unit tests, and if those succeed, proceed to publishing
+the library.  That is what this plugin provides.
+
 ### Clojure CLI
 
 In order to use it in your build script when you use the [Clojure cli](https://clojure.org/reference/deps_and_cli),
@@ -57,6 +60,8 @@ These are the options you can use to configure the library build:
 |---|---|---|---|
 |`:tag-regex`|`#".*"`|`#".*"`|Regex to filter release tags|
 |`:clj-img`|`docker.io/clojure:temurin-<version>-slim`|`docker.io/clojure:temurin-<version>-lein-slim`|The image to use to test and publish.  Tag depends on lein or cli library and evolves with the lib version.  See `monkey.ci.plugin.clj/default-deps-img` or `monkey.ci.plugin.clj/default-lein-img`.|
+|`:test-job-id`|`test`|`test`|The id for the job that runs unit tests.|
+|`:publish-job-id`|`publish`|`publish`|The id for the job that publishes the library.|
 |`:test-alias`|`:test:junit`|`test-junit`|The alias to apply when building a library.|
 |`:artifact-id`|`test-junit`|`test-junit`|The id given to the artifact that holds test results|
 |`:junit-file`|`junit.xml`|`junit.xml`|The path of the junit results xml file|

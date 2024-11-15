@@ -48,6 +48,10 @@
         (is (= "test"
                (:id (test-job {} {})))))
 
+      (testing "can override id"
+        (is (= "test-job-id"
+               (:id (test-job {:test-job-id "test-job-id"} {})))))
+
       (testing "uses mvn cache as local dir"
         (let [s (test-job {} {:job {:work-dir "/test/dir"}})]
           (is (not-empty (:caches s)))
@@ -77,15 +81,25 @@
         (testing "`nil` if it's not the main branch or a tag"
           (is (nil? (publish-job {} {:build {:git {:ref "refs/heads/other"}}}))))
 
-        (testing "depends on test"
-          (is (= ["test"]
-                 (-> (publish-job {} {:build {:git {:ref "refs/heads/main"}}})
-                     :dependencies))))
-        
-        (testing "invokes default container img"
-          (is (= sut/default-deps-img
-                 (-> (publish-job {} {:build {:git {:ref "refs/heads/main"}}})
-                     :container/image))))
+        (let [ctx {:build {:git {:ref "refs/heads/main"}}}]
+          (testing "depends on test"
+            (is (= ["test"]
+                   (-> (publish-job {} ctx)
+                       :dependencies))))
+
+          (testing "can override id"
+            (is (= "test-job-id"
+                   (:id (publish-job {:publish-job-id "test-job-id"} ctx)))))
+
+          (testing "depends on overridden test job id"
+            (is (= ["test-job-id"]
+                   (-> (publish-job {:test-job-id "test-job-id"} ctx)
+                       :dependencies))))
+          
+          (testing "invokes default container img"
+            (is (= sut/default-deps-img
+                   (-> (publish-job {} ctx)
+                       :container/image)))))
 
         (testing "invokes configured container img"
           (is (= "test-img"
@@ -161,6 +175,10 @@
         (is (= "test"
                (:id (test-job {} {})))))
 
+      (testing "can override id"
+        (is (= "test-job-id"
+               (:id (test-job {:test-job-id "test-job-id"} {})))))
+
       (testing "publishes junit.xml artifact"
         (let [s (test-job {} {:job {:work-dir "/test/dir"}})]
           (is (= [{:id "test-junit"
@@ -191,6 +209,17 @@
                  (-> (publish-job {} {:build {:git {:ref "refs/heads/main"}}})
                      :dependencies))))
         
+        (testing "can override id"
+          (is (= "test-job-id"
+                 (:id (publish-job {:publish-job-id "test-job-id"}
+                                   {:build {:git {:ref "refs/heads/main"}}})))))
+
+        (testing "when overriding test job id, depends on correct job"
+          (is (= ["test-job-id"]
+                 (-> (publish-job {:test-job-id "test-job-id"}
+                                  {:build {:git {:ref "refs/heads/main"}}})
+                     :dependencies))))
+
         (testing "invokes default container img"
           (is (= sut/default-lein-img
                  (-> (publish-job {} {:build {:git {:ref "refs/heads/main"}}})
