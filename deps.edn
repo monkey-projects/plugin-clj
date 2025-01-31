@@ -1,11 +1,11 @@
-{:deps {com.monkeyci/app {:mvn/version "0.9.2"}
+{:deps {com.monkeyci/app {:mvn/version "0.14.5"}
         com.monkeyci/plugin-junit {:mvn/version "0.1.0"}}
 
  :paths ["src"]
  
  :aliases
  {:test
-  {:extra-deps {com.monkeyprojects/build {:mvn/version "0.2.0"}}
+  {:extra-deps {com.monkeyprojects/build {:mvn/version "0.3.1-SNAPSHOT"}}
    :extra-paths ["test"]
    :exec-fn monkey.test/all}
 
@@ -16,11 +16,16 @@
   {:exec-fn monkey.test/watch}
 
   :jar
-  {:extra-deps {com.monkeyprojects/build {:mvn/version "0.2.0"}}
+  {:extra-deps {com.monkeyprojects/build {:mvn/version "0.3.1-SNAPSHOT"}}
    :exec-fn monkey.build/jar
-   :exec-args {:jar "target/plugin-clj.jar"
-               :version-env "LIB_VERSION"
-               :lib com.monkeyci/plugin-clj}}
+   :exec-args {:jar "target/plugin-clj.jar"}}
   
   :publish
-  {:exec-fn monkey.build/jar+deploy}}}
+  {:exec-fn monkey.build/jar+deploy
+   :exec-args {:version [[:env "LIB_VERSION"] "0.4.0-SNAPSHOT"]
+               :lib com.monkeyci/plugin-clj
+               :pom-data [[:licenses
+                           [:license
+                            [:name "MIT"]
+                            [:url "https://mit-license.org/"]]]]
+               :scm {:url "https://github.com/monkey-projects/plugin-clj"}}}}}
