@@ -27,16 +27,19 @@
 (defn- publish-job-id [conf]
   (get conf :publish-job-id "publish"))
 
-(defn clj-deps [id
-                {:keys [clj-img]
-                 :or {clj-img default-deps-img}}
-                cmd]
-  (b/container-job id
-                   {:container/image clj-img
-                    ;; Must use a relative path, because running in a container results in the wrong path
-                    :script [(str "clojure -Sdeps '{:mvn/local-repo \".m2\"}' " cmd)]
-                    :caches [{:id "clj:mvn-repo"
-                              :path ".m2"}]}))
+(defn clj-deps
+  ([id
+    {:keys [clj-img]
+     :or {clj-img default-deps-img}}
+    cmd]
+   (b/container-job id
+                    {:container/image clj-img
+                     ;; Must use a relative path, because running in a container results in the wrong path
+                     :script [(str "clojure -Sdeps '{:mvn/local-repo \".m2\"}' " cmd)]
+                     :caches [{:id "clj:mvn-repo"
+                               :path ".m2"}]}))
+  ([id cmd]
+   (clj-deps id {} cmd)))
 
 (defn deps-test [{:keys [test-alias artifact-id junit-file]
                   :or {test-alias ":test:junit"
@@ -102,17 +105,20 @@
   "Creates jobs that test and deploy a clojure library using deps.edn."
   (partial jobs-maker deps-test deps-publish))
 
-(defn clj-lein [id
-                {:keys [clj-img]
-                 :or {clj-img default-lein-img}}
-                cmds]
-  (b/container-job id
-   {:container/image clj-img
-    :script cmds
-    ;; TODO Cache: use lein profile for this
-    ;; :caches [{:id "clj:mvn-repo"
-    ;;           :path ".m2"}]
-    }))
+(defn clj-lein
+  ([id
+    {:keys [clj-img]
+     :or {clj-img default-lein-img}}
+    cmds]
+   (b/container-job id
+                    {:container/image clj-img
+                     :script cmds
+                     ;; TODO Cache: use lein profile for this
+                     ;; :caches [{:id "clj:mvn-repo"
+                     ;;           :path ".m2"}]
+                     }))
+  ([id cmds]
+   (clj-lein id {} cmds)))
 
 (defn lein-test [{:keys [test-alias artifact-id junit-file]
                   :or {test-alias "test-junit"

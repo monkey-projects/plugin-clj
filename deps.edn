@@ -1,4 +1,4 @@
-{:deps {com.monkeyci/app {:mvn/version "0.14.5"}
+{:deps {com.monkeyci/app {:mvn/version "0.16.1"}
         com.monkeyci/plugin-junit {:mvn/version "0.1.0"}}
 
  :paths ["src"]
@@ -22,7 +22,7 @@
   
   :publish
   {:exec-fn monkey.build/jar+deploy
-   :exec-args {:version [[:env "LIB_VERSION"] "0.4.0-SNAPSHOT"]
+   :exec-args {:version [[:env "LIB_VERSION"] "0.4.1-SNAPSHOT"]
                :lib com.monkeyci/plugin-clj
                :pom-data [[:licenses
                            [:license
