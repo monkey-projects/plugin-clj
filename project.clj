@@ -4,8 +4,8 @@
   :license {:name "MIT License"
             :url "https://mit-license.org/"
             :distribution :repo}
-  :dependencies [[com.monkeyci/app "0.16.1" :exclusions [com.monkeyprojects/oci-common]]
-                 [com.monkeyci/plugin-junit "0.1.0"]]
+  :dependencies [[com.monkeyci/app "0.20.1" :exclusions [com.monkeyprojects/oci-common]]
+                 [com.monkeyci/plugin-junit "0.2.0"]]
 
   :profiles
   {:dev
