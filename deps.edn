@@ -1,5 +1,5 @@
-{:deps {com.monkeyci/app {:mvn/version "0.16.1"}
-        com.monkeyci/plugin-junit {:mvn/version "0.1.0"}}
+{:deps {com.monkeyci/app {:mvn/version "0.20.1"}
+        com.monkeyci/plugin-junit {:mvn/version "0.2.0"}}
 
  :paths ["src"]
  
