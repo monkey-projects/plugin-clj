@@ -1,7 +1,7 @@
 (ns monkey.ci.plugin.test.clj-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.string :as cs]
-            [monkey.ci.build.api :as api]
+            [monkey.ci.api :as m]
             [monkey.ci.plugin.clj :as sut])
   (:import java.io.File))
 
@@ -69,9 +69,9 @@
           (is (not-empty (:junit s)))))))
 
   (testing "publish job"
-    (with-redefs [api/build-params (constantly
-                                    {"CLOJARS_USERNAME" "testuser"
-                                     "CLOJARS_PASSWORD" "testpass"})]
+    (with-redefs [m/build-params (constantly
+                                  {"CLOJARS_USERNAME" "testuser"
+                                   "CLOJARS_PASSWORD" "testpass"})]
       (letfn [(publish-job [conf ctx]
                 (let [ctx (assoc-in ctx [:build :git :main-branch] "main")]
                   (when-let [f (-> ((sut/deps-library conf) ctx)
@@ -192,9 +192,9 @@
       (testing "activates additional profile for m2 cache")))
 
   (testing "publish job"
-    (with-redefs [api/build-params (constantly
-                                    {"CLOJARS_USERNAME" "testuser"
-                                     "CLOJARS_PASSWORD" "testpass"})]
+    (with-redefs [m/build-params (constantly
+                                  {"CLOJARS_USERNAME" "testuser"
+                                   "CLOJARS_PASSWORD" "testpass"})]
       (letfn [(publish-job [conf ctx]
                 (let [ctx (assoc-in ctx [:build :git :main-branch] "main")]
                   (when-let [f (-> ((sut/lein-library conf) ctx)

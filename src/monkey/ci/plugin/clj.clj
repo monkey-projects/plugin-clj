@@ -1,24 +1,21 @@
 (ns monkey.ci.plugin.clj
   (:require [babashka.fs :as fs]
             [clojure.xml :as xml]
-            [monkey.ci.build
-             [api :as api]
-             [core :as b]
-             [shell :as s]]
+            [monkey.ci.api :as m]
             [monkey.ci.ext.junit]))
 
 (def version-regex #"^\d+\.\d+(\.\d+)?$")
 (def all-regex #".*")
 
-(def default-deps-img "docker.io/clojure:temurin-21-bookworm-slim")
-(def default-lein-img "docker.io/clojure:temurin-21-lein-bookworm-slim")
+(def default-deps-img "docker.io/clojure:temurin-24-trixie-slim")
+(def default-lein-img "docker.io/clojure:temurin-24-lein-trixie-slim")
 
 (defn version-tag? [{:keys [tag-regex] :or {tag-regex all-regex}} ctx]
-  (some->> (b/tag ctx)
+  (some->> (m/tag ctx)
            (re-matches tag-regex)))
 
 (defn should-publish? [conf ctx]
-  (or (b/main-branch? ctx)
+  (or (m/main-branch? ctx)
       (version-tag? conf ctx)))
 
 (defn- test-job-id [conf]
@@ -32,7 +29,7 @@
     {:keys [clj-img]
      :or {clj-img default-deps-img}}
     cmd]
-   (b/container-job id
+   (m/container-job id
                     {:container/image clj-img
                      ;; Must use a relative path, because running in a container results in the wrong path
                      :script [(str "clojure -Sdeps '{:mvn/local-repo \".m2\"}' " cmd)]
@@ -56,7 +53,7 @@
   "Given the step context, reads the `pom.xml` file from the configured location
    and returns the version tag value."
   [{:keys [pom-file] :or {pom-file "pom.xml"}} ctx]
-  (let [f (s/in-work ctx pom-file)]
+  (let [f (m/in-work ctx pom-file)]
     (when (fs/exists? f)
       (->> (xml/parse f)
            :content
@@ -69,7 +66,7 @@
                      :or {pom-version-reader read-pom-version}
                      :as conf}
                     ctx]
-  (or (b/tag ctx) (pom-version-reader conf ctx)))
+  (or (m/tag ctx) (pom-version-reader conf ctx)))
 
 (defn- add-version [env
                     {:keys [version-var]
@@ -81,7 +78,7 @@
       v (assoc version-var v))))
 
 (defn- clojars-creds-params [ctx]
-  (-> (api/build-params ctx)
+  (-> (m/build-params ctx)
       (select-keys ["CLOJARS_USERNAME" "CLOJARS_PASSWORD"])))
 
 (defn deps-publish [{:keys [publish-alias]
@@ -110,7 +107,7 @@
     {:keys [clj-img]
      :or {clj-img default-lein-img}}
     cmds]
-   (b/container-job id
+   (m/container-job id
                     {:container/image clj-img
                      :script cmds
                      ;; TODO Cache: use lein profile for this
