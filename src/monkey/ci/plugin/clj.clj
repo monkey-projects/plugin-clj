@@ -1,6 +1,7 @@
 (ns monkey.ci.plugin.clj
   (:require [babashka.fs :as fs]
-            [clojure.xml :as xml]
+            [clojure.data.xml :as xml]
+            [clojure.java.io :as io]
             [monkey.ci.api :as m]
             [monkey.ci.ext.junit]))
 
@@ -55,12 +56,13 @@
   [{:keys [pom-file] :or {pom-file "pom.xml"}} ctx]
   (let [f (m/in-work ctx pom-file)]
     (when (fs/exists? f)
-      (->> (xml/parse f)
-           :content
-           (filter (comp (partial = :version) :tag))
-           (first)
-           :content
-           (first)))))
+      (with-open [r (io/reader f)]
+        (->> (xml/parse r)
+             :content
+             (filter (comp (partial = :version) :tag))
+             (first)
+             :content
+             (first))))))
 
 (defn- get-version [{:keys [pom-version-reader]
                      :or {pom-version-reader read-pom-version}

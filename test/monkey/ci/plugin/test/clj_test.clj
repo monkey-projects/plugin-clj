@@ -1,5 +1,6 @@
 (ns monkey.ci.plugin.test.clj-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [babashka.fs :as fs]
+            [clojure.test :refer [deftest testing is]]
             [clojure.string :as cs]
             [monkey.ci.api :as m]
             [monkey.ci.plugin.clj :as sut])
@@ -257,9 +258,8 @@
 
 (deftest read-pom-version
   (testing "reads `pom.xml` file and extracts version"
-    (let [tmp-dir (System/getProperty "java.io.tmpdir")
-          f (File/createTempFile "pom-" ".xml")]
-      (is (nil? (spit f "<project><version>test-version</version></project>")))
-      (is (= "test-version" (sut/read-pom-version {:pom-file (.getName f)}
-                                                  {:job {:work-dir tmp-dir}})))
-      (is (true? (.delete f))))))
+    (fs/with-temp-dir [dir]
+      (let [f (fs/file dir "pom.xml")]
+        (is (nil? (spit f "<project><version>test-version</version></project>")))
+        (is (= "test-version" (sut/read-pom-version {:pom-file (fs/file-name f)}
+                                                    {:work-dir (str dir)})))))))
