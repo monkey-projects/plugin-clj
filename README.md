@@ -40,11 +40,13 @@ This is almost the most basic configuration.  You could also leave out the entir
 config map, if you want!  The `version-regex` matches any standard version tag
 (that looks like `x.x.x` or `x.x`).
 
-It will run the unit tests, that are assumed to be declared as an alias function named
+It will run the unit tests using `-X`, that are assumed to be declared as an alias function named
 `:test` in `deps.edn` (as a default).  If test results are written to a `junit.xml` file,
 these will be parsed and added to the job results.  It reads all necessary information
-to deploy the library from the committed `pom.xml`.  These values can be overridden using
-config parameters.
+to deploy the library from the committed `pom.xml`.  Deployment is done using `-T`, which
+has an impact on the classpath.
+
+Note that all values can be overridden using config parameters.
 
 ### Leiningen
 

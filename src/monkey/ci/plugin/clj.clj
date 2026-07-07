@@ -88,7 +88,7 @@
                      :as conf}]
   (fn [ctx]
     (when (should-publish? conf ctx)
-      (-> (clj-deps (publish-job-id conf) conf (str "-X" publish-alias))
+      (-> (clj-deps (publish-job-id conf) conf (str "-T" publish-alias))
           (assoc :container/env (-> (clojars-creds-params ctx)
                                     (add-version conf ctx))
                  :dependencies [(test-job-id conf)])))))
