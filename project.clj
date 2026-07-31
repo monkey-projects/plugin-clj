@@ -5,9 +5,8 @@
             :url "https://mit-license.org/"
             :distribution :repo}
   :dependencies [[org.clojure/clojure "1.12.2"]
-                 [com.monkeyprojects/oci-common "0.2.2"]
-                 [com.monkeyci/app "0.20.1"]
-                 [com.monkeyci/plugin-junit "0.2.0"]]
+                 [com.monkeyci/script "0.27.0-SNAPSHOT"]
+                 [com.monkeyci/plugin-junit "0.3.0-SNAPSHOT"]]
 
   :profiles
   {:dev
