@@ -4,7 +4,7 @@
   :license {:name "MIT License"
             :url "https://mit-license.org/"
             :distribution :repo}
-  :dependencies [[org.clojure/clojure "1.12.2"]
+  :dependencies [[org.clojure/clojure "1.12.5"]
                  [com.monkeyci/script "0.27.0-SNAPSHOT"]
                  [com.monkeyci/plugin-junit "0.3.0-SNAPSHOT"]]
 

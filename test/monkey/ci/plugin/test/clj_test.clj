@@ -262,4 +262,4 @@
       (let [f (fs/file dir "pom.xml")]
         (is (nil? (spit f "<project><version>test-version</version></project>")))
         (is (= "test-version" (sut/read-pom-version {:pom-file (fs/file-name f)}
-                                                    {:work-dir (str dir)})))))))
+                                                    {:job {:work-dir (str dir)}})))))))

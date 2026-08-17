@@ -59,7 +59,7 @@
       (with-open [r (io/reader f)]
         (->> (xml/parse r)
              :content
-             (filter (comp (partial = :version) :tag))
+             (filter (comp (partial = "version") (fnil name "") :tag))
              (first)
              :content
              (first))))))
