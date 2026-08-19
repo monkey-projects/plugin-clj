@@ -1,4 +1,4 @@
-{:deps {com.monkeyci/script {:mvn/version "0.27.0-SNAPSHOT"}
+{:deps {com.monkeyci/script {:mvn/version "0.27.0"}
         com.monkeyci/plugin-junit {:mvn/version "0.3.0-SNAPSHOT"}}
 
  :paths ["src"]
