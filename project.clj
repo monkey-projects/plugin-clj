@@ -16,5 +16,5 @@
   :aliases
   {"test-junit" ["run" "-m" "kaocha.runner"
                  "--plugin" "kaocha.plugin/junit-xml"
-                 "--junit-xml-file" "junit.xml"]})
+                 "--junit-xml-file" "junit-lein.xml"]})
 
